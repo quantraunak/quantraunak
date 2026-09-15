@@ -2,10 +2,6 @@
 
 M.S. Computer Science at USC · machine learning at Innovius Capital · B.S. Economics, Santa Clara.
 
-I work on measurement — the controls, gates and benchmarks that separate a real result from
-an artifact of how the data was assembled. Most of what follows ended in a null or an
-inverted finding. Each one says so, with the reason attached.
-
 [raunaksood.vercel.app](https://raunaksood.vercel.app) · [LinkedIn](https://www.linkedin.com/in/raunak-sood)
 
 ---
