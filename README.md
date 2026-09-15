@@ -2,17 +2,18 @@
 
 M.S. Computer Science at USC · machine learning at Innovius Capital · B.S. Economics, Santa Clara.
 
-I build measurement infrastructure — the kind that tells you when a result is real and
-when it's an artifact of how the data was assembled.
+I work on measurement — the controls, gates and benchmarks that separate a real result from
+an artifact of how the data was assembled. Most of what follows ended in a null or an
+inverted finding. Each one says so, with the reason attached.
 
 [raunaksood.vercel.app](https://raunaksood.vercel.app) · [LinkedIn](https://www.linkedin.com/in/raunak-sood)
 
 ---
 
-### [leakcheck](https://github.com/quantraunak/leakcheck) — find features that read data they were never supposed to see
+### [leakprobe](https://github.com/quantraunak/leakprobe) — find features that read data they were never supposed to see
 
 Temporal leakage never throws and always improves your metrics, which is why it survives
-review. `leakcheck` finds it without needing to know the right answer: move *when* a data
+review. `leakprobe` finds it without needing to know the right answer: move *when* a data
 source became knowable, recompute, and report every feature that moved.
 
 The exactness is the mechanism. A feature that genuinely cannot read a source gets identical
@@ -21,7 +22,7 @@ arrays through identical code and returns bit-identical floats — its differenc
 you have to squint at.
 
 ```python
-report = lc.check(compute=build_features, sources=..., timestamps=..., declared=...)
+report = lp.check(compute=build_features, sources=..., timestamps=..., declared=...)
 report.raise_for_leaks()
 ```
 
@@ -31,11 +32,18 @@ shares outstanding, a number that comes off a regulatory filing. It was the only
 its group that moved when the filing calendar shifted, while eleven genuine price factors
 held at exactly zero.
 
-`Python · pandas` — metamorphic testing, applied to feature pipelines
+Benchmarked against itself on five public datasets — retail transactions, taxi trips, crime
+reports, 311 requests, bike shares — with five planted leak shapes and a correct pipeline for
+each. The shipped version caught **6 of 9**. All three misses had one cause: moving a
+timestamp only removes rows from code that *filters* on it, so code that joins a table and
+reads a column off it stayed invisible. Two more probes closed that, and the current version
+catches **9 of 9 with 0 false positives on the correct pipelines**.
+
+`pip install leakprobe` · `Python · pandas` — metamorphic testing, applied to feature pipelines
 
 ### [bias-fingerprints](https://github.com/quantraunak/bias-fingerprints) — what a data-handling mistake is actually worth
 
-The measurement `leakcheck` came out of. One 22-factor equity study, re-run under alternative
+The measurement `leakprobe` came out of. One 22-factor equity study, re-run under alternative
 data conventions with everything else held fixed, so the difference between two runs is
 attributable to the convention and nothing else.
 
@@ -51,8 +59,50 @@ walk-forward. And the finding that killed my own result — **59% of the decile 
 market beta**, with Sharpe ranging 0.09–0.49 across six seeds that differed only in random
 state.
 
+Then I ran the paper's own validation protocol, and it split the claim in half. Both
+signatures are stable across disjoint subsamples and survive bootstrapping, but only one is
+separable from clean performance at a twelve-year study's noise level: universe conditioning
+is recovered at **100%**, period-end dating at **52%**, labelling 97% of *correct* tables
+defective. The reason is geometric and checkable before any table is diagnosed — after
+removing family means the dating signature is smaller than the within-family variation in
+true performance and correlates **+0.543** with it, so a clean table already supplies most of
+the defect's shape.
+
 `Python · LightGBM · CVXPY · pandas` · [paper](https://github.com/quantraunak/bias-fingerprints/blob/main/paper/bias_fingerprints.pdf) · [dashboard](https://quantraunak.github.io/bias-fingerprints/) · [write-up](https://raunaksood.vercel.app/work/quant)
 
+### [cardinality-eval](https://github.com/quantraunak/cardinality-eval) — the schema is not the cost
+
+Does extraction recall degrade with the number of items a model must emit? I built documents
+where the answer is known by construction — *k* verbatim filing sentences injected into
+name-free filler at constant length — so no annotation is needed and *k* is exact.
+
+It does degrade, **but only without a grammar**. Unconstrained decoding loses 0.214 recall
+from k=1 to k=16 (p = 0.011); the same model on the same documents under a JSON schema loses
+nothing. That inverts the explanation I had written down as most threatening: constrained
+decoding was the suspect, and it turns out to be the mitigation. At k=16 the constrained arm
+emits 9.4 items of 16 and the unconstrained arm 7.2, at equal precision — left to decide when
+to stop, the model stops early, and a half-filled array will not parse.
+
+The instrument failed its own sanity gate four times before it worked, and the
+pre-registration records every failure.
+
+`Python · ollama · Qwen 3` — 450 raw model responses committed, so the result re-scores without a GPU
+
+### [filing-links](https://github.com/quantraunak/filing-links) — a link graph, released with its ceiling attached
+
+A construction protocol for point-in-time firm-relationship graphs from 10-K prose: a
+benchmark with auditable negatives, a measured cost/quality frontier across six local LLMs,
+and a pre-registered coverage gate.
+
+The gate fired. 1,989 filings yield 1,185 edges over 125 firms — a median of **27 names per
+date, 6.4%** of the tradable cross-section against the ~145 a return test needs — so the
+study stops at the coverage report and the signal test stays unrun. Four explanations for
+the shortfall were proposed and each refuted against cached data. What survives is the
+reason: Regulation S-K compels a filer to disclose customers above 10% of revenue and imposes
+no matching duty for suppliers, so extracting the S&P 500 extracts the side that is not
+required to speak.
+
+`Python · pandas · ollama` — 668 customer claims against 241 supplier claims
 ### [Resampled Thought Trees](https://github.com/quantraunak/tot-resampled-thought-trees) — which reasoning steps actually matter
 
 Five-author USC research on measuring the downstream utility of intermediate states in
@@ -74,9 +124,5 @@ first paragraph.
 `Next.js · React Native · Supabase · Postgres` · [live](https://melange-psi.vercel.app)
 
 ---
-
-Also: [filing-links](https://github.com/quantraunak/filing-links) — a construction protocol for
-point-in-time firm-relationship graphs from SEC filing text, with a benchmark carrying
-auditable negatives and a measured cost/quality frontier across six local LLMs.
 
 `Python · pandas · PyTorch · LightGBM · TypeScript · Postgres · C++`
