@@ -33,7 +33,9 @@ reports, 311 requests, bike shares — with five planted leak shapes and a corre
 each. The shipped version caught **6 of 9**. All three misses had one cause: moving a
 timestamp only removes rows from code that *filters* on it, so code that joins a table and
 reads a column off it stayed invisible. Two more probes closed that, and the current version
-catches **9 of 9 with 0 false positives on the correct pipelines**.
+catches **8 of 9 with 0 false positives on the correct pipelines**. The ninth, an outcome
+stored in the event's own row under its own clock, is a miss by construction, and the
+benchmark keeps it as the method's boundary.
 
 `pip install leakprobe` · `Python · pandas` — metamorphic testing, applied to feature pipelines
 
@@ -72,15 +74,15 @@ Does extraction recall degrade with the number of items a model must emit? I bui
 where the answer is known by construction — *k* verbatim filing sentences injected into
 name-free filler at constant length — so no annotation is needed and *k* is exact.
 
-It does degrade, **but only without a grammar**. Unconstrained decoding loses 0.214 recall
-from k=1 to k=16 (p = 0.011); the same model on the same documents under a JSON schema loses
-nothing. That inverts the explanation I had written down as most threatening: constrained
-decoding was the suspect, and it turns out to be the mitigation. At k=16 the constrained arm
-emits 9.4 items of 16 and the unconstrained arm 7.2, at equal precision — left to decide when
-to stop, the model stops early, and a half-filled array will not parse.
+Without a grammar it does: unconstrained decoding loses **0.214** recall from k=1 to k=16
+(p = 0.011), while the same model on the same documents under a JSON schema does not decline
+(p = 0.73). Constrained decoding was the suspect I had written down as most threatening, and
+it is not the cost. Whether it is the cure is not settled at this scale: the gap between the
+arms is carried by k=1, where the constrained arm returns an empty list on 13 of 25
+documents, and from k=4 to k=16 both arms decline by a similar amount.
 
-The instrument failed its own sanity gate four times before it worked, and the
-pre-registration records every failure.
+The pilot did not meet its own pre-registered k=1 validity gate, so absolute levels are not
+interpretable, and the README says so first.
 
 `Python · ollama · Qwen 3` — 450 raw model responses committed, so the result re-scores without a GPU
 
@@ -111,7 +113,8 @@ Game24 and constrained crossword search.
 
 ### [Melange](https://github.com/quantraunak/Melange) — shipped, two clients, one database
 
-A collaboration-matching app for photographers, models and stylists. Two clients — Next.js web
+A collaboration-matching app for photographers, models and stylists, live on the iOS App
+Store and the web. Two clients — Next.js web
 and Expo/React Native iOS — against one Postgres, with authorisation enforced by row-level
 security on every table rather than by a trusted backend. Nine accounts and no traction; the
 [status doc](https://github.com/quantraunak/Melange/blob/main/docs/STATUS.md) says so in the
